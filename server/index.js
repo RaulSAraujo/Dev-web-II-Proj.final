@@ -17,7 +17,7 @@ process.on('SIGINT', () => {
 app.get("/users", async (req, res) => {
     try {
         const client = await pool.connect();
-        const { rows } = await client.query("SELECT * FROM Users");
+        const { rows } = await client.query("SELECT * FROM users");
         console.table(rows);
         res.status(200).send(rows);
     } catch (error) {
@@ -32,28 +32,23 @@ app.post("/users", async (req, res) => {
         const client = await pool.connect();
 
         if (!name || !email || !password) {
-            return res.status(401).send("Informe o id, nome, email e senha.")
+            return res.status(200).send({ msg: "Informe o nome, email e senha." })
         }
 
         const user = await client.query(`SELECT FROM Users where email='${email}'`);
-        console.log(user)
         if (user.rows.length === 0) {
-            await client.query(`INSERT INTO Users (id, nome, email, password) VALUES (uuid_generate_v4(), '${name}', '${email}', '${password}')`)
+            let { rows } = await client.query(`INSERT INTO Users (name, email, password) VALUES ('${name}', '${email}', '${password}') RETURNING *`)
             res.status(200).send({
                 msg: "Sucesso em cadastrar usuario.",
-                result: {
-                    id,
-                    email,
-                    password,
-                    name
-                }
+                result: rows[0]
             });
         } else {
-            res.status(401).send("Usuario ja cadastrado.");
+            res.status(200).send({
+                msg: "Usuario ja cadastrado."
+            });
         }
     } catch (error) {
-        console.error(error);
-        res.status(500).send("Erro de conexão com o servidor");
+        res.status(500).send({ msg: "Erro de conexão com o servidor" });
     }
 })
 
